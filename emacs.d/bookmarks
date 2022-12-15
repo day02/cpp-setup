@@ -1,0 +1,30 @@
+;;;; Emacs Bookmark Format Version 1 ;;;; -*- coding: utf-8-emacs -*- 
+;;; This format is meant to be slightly human-readable;
+;;; nevertheless, you probably don't want to edit it.
+;;; -*- End Of Bookmark File Format Version Stamp -*-
+(("master"
+ (filename . "~/workspace/main/magneto/master/")
+ (front-context-string . "BUILD\n  -rw-rw-r")
+ (rear-context-string . "80 Sep  7 22:31 ")
+ (position . 266))
+("slave"
+ (filename . "~/workspace/main/magneto/slave/")
+ (front-context-string . "BUILD\n  -rw-rw-r")
+ (rear-context-string . "76 Sep  4 14:37 ")
+ (position . 264))
+("vmware"
+ (filename . "~/workspace/main/magneto/connectors/vmware/")
+ (front-context-string . "BUILD\n  -rw-rw-r")
+ (rear-context-string . "74 Sep  4 14:37 ")
+ (position . 277))
+("magneto"
+ (filename . "~/workspace/main/magneto/")
+ (front-context-string . "BUILD\n  -rw-rw-r")
+ (rear-context-string . "41 Sep  7 22:31 ")
+ (position . 258))
+("main"
+ (filename . "~/workspace/main/")
+ (front-context-string . "  lrwxrwxrwx   1")
+ (rear-context-string . "8-fastbuild/bin\n")
+ (position . 2186))
+)

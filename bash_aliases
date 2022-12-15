@@ -1,0 +1,51 @@
+#!/bin/bash
+
+[ -z "$TMUX"  ] && { tmux attach || exec tmux new-session && exit;}
+
+alias gl="git log --graph --decorate --abbrev-commit --all"
+alias rex="killall emacs; emacs --daemon; x"
+alias x="emacsclient -nw ."
+alias ..="cd .."
+export EDITOR="x"
+
+export CODE_DIR="/home/uraina/code"
+alias code="cd $CODE_DIR"
+alias osq="cd $CODE_DIR/osquery"
+
+export OS_TYPE="linux"
+
+function osq-mksys()
+{
+    docker stop osquery.$OS_TYPE
+    docker rm osquery.$OS_TYPE
+    docker rmi osquery.$OS_TYPE
+    docker images -a
+    docker ps -a
+    docker build $CODE_DIR -f $CODE_DIR/Dockerfile.$OS_TYPE \
+           -t osquery.$OS_TYPE --build-arg user=uraina
+    docker run --detach \
+           -v $CODE_DIR/osquery/osquery:$CODE_DIR/osquery/osquery \
+           -v $CODE_DIR/osquery/specs:$CODE_DIR/osquery/specs \
+           --name osquery.$OS_TYPE  -it osquery.$OS_TYPE bash
+}
+
+function osq-container()
+{
+    docker stop osquery.$OS_TYPE
+    docker start osquery.$OS_TYPE
+}
+
+function osq-shell()
+{
+    docker exec -it osquery.$OS_TYPE bash
+}
+
+function osq-mk()
+{
+    docker exec -it osquery.$OS_TYPE mk
+}
+
+function osq-mkt()
+{
+    docker exec -it osquery.$OS_TYPE mkt
+}
