@@ -1,0 +1,20 @@
+;;;; Emacs Bookmark Format Version 1;;;; -*- coding: utf-8-emacs; mode: lisp-data -*-
+;;; This format is meant to be slightly human-readable;
+;;; nevertheless, you probably don't want to edit it.
+;;; -*- End Of Bookmark File Format Version Stamp -*-
+(("ssm-dev"
+ (filename . "/ssh:uraina@uraina-dev2.local:/Users/uraina/code/osquery/")
+ (front-context-string . ".clang-format\n  ")
+ (rear-context-string . "52 Jul 13 12:32 ")
+ (position . 275))
+("ssm"
+ (filename . "/ssh:uraina@127.0.0.1#3022:/home/uraina/")
+ (front-context-string . ".bash_history\n  ")
+ (rear-context-string . "09 Sep 22 13:49 ")
+ (position . 246))
+("osquery"
+ (filename . "~/code/osquery/osquery/")
+ (front-context-string . "carver\n  -rw-rw-")
+ (rear-context-string . "96 Aug 24 10:58 ")
+ (position . 240))
+)

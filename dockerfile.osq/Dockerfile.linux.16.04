@@ -1,0 +1,78 @@
+## prepare the system for osquery build.
+FROM ubuntu:16.04
+RUN apt update && \
+    apt install -y sudo make cmake git python3-dev vim valgrind ruby && \
+    ln -s /usr/bin/python3 /usr/local/bin/python && \
+    rm -rf /var/lib/apt/lists/*
+RUN gem install dotenv -v 2.8.1
+
+## shortcut commands mk-sys.
+RUN echo '#!/bin/bash \n \
+    cd ~/code/osquery && \
+    make sysprep && make deps && \
+    cd -' > /usr/bin/mk-sys && \
+    chmod +x /usr/bin/mk-sys
+
+## shortcut commands mk.
+RUN echo '#!/bin/bash \n \
+    cd ~/code/osquery && \
+    make debug -j16 && \
+    cd -' > /usr/bin/mk && \
+    chmod +x /usr/bin/mk
+
+## shortcut commands mkt.
+RUN echo '#!/bin/bash \n \
+    cd ~/code/osquery && \
+    make debug -j16 && \
+    make test_debug -j16 && \
+    cd -' > /usr/bin/mkt && \
+    chmod +x /usr/bin/mkt
+
+## shortcut commands mkr.
+RUN echo '#!/bin/bash \n \
+    cd ~/code/osquery && \
+    make -j16 && \
+    cd -' > /usr/bin/mkr && \
+    chmod +x /usr/bin/mkr
+
+## shortcut commands mkrt.
+RUN echo '#!/bin/bash \n \
+    cd ~/code/osquery && \
+    make -j16 && \
+    make test -j16 && \
+    cd -' > /usr/bin/mkrt && \
+    chmod +x /usr/bin/mkrt
+
+## shortcut commands mk-rem.
+RUN echo '#!/bin/bash \n \
+    cd ~/code/osquery && \
+    REMEDIATION=1 make debug -j16 && \
+    cd -' > /usr/bin/mk-rem && \
+    chmod +x /usr/bin/mk-rem
+
+## shortcut commands mk-tidy.
+RUN echo '#!/bin/bash \n \
+    cd ~/code/osquery && \
+    make tidy -j16 && \
+    cd -' > /usr/bin/mk-tidy && \
+    chmod +x /usr/bin/mk-tidy
+
+## shortcut commands mk-valgrind.
+RUN echo '#!/bin/bash \n \
+    cd ~/code/osquery && \
+    VALGRIND=1 make debug -j16 && \
+    cd -' > /usr/bin/mk-valgrind && \
+    chmod +x /usr/bin/mk-valgrind
+
+## add a user with sudo privilege.
+ARG user
+RUN adduser --disabled-password --gecos '' ${user}
+RUN adduser ${user} sudo
+RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+USER ${user}
+
+## changing the ownership to user.
+WORKDIR /home/${user}/code/osquery
+RUN sudo chown -R ${user}:${user} /home/${user}/code/osquery
+
+ENTRYPOINT ["bash", "-l", "-c"]
