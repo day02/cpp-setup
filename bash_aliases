@@ -11,6 +11,7 @@ export EDITOR="x"
 export CODE_DIR="/home/uraina/code"
 alias code="cd $CODE_DIR"
 alias osq="cd $CODE_DIR/osquery"
+alias build="cd $CODE_DIR/osquery/build/debug_linux/osquery"
 
 export OS_TYPE="linux"
 
@@ -26,6 +27,7 @@ function osq-mksys()
     docker run --detach \
            -v $CODE_DIR/osquery/osquery:$CODE_DIR/osquery/osquery \
            -v $CODE_DIR/osquery/specs:$CODE_DIR/osquery/specs \
+           -v $CODE_DIR/osquery/build:$CODE_DIR/osquery/build \
            --name osquery.$OS_TYPE  -it osquery.$OS_TYPE bash
 }
 
