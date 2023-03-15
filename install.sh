@@ -10,7 +10,7 @@ sudo apt install --assume-yes build-essential
 sudo apt install --assume-yes python3-pip
 sudo apt install --assume-yes git
 sudo apt install --assume-yes vim
-sudo apt install --assume-yes emacs26
+sudo apt install --assume-yes emacs28
 sudo apt install --assume-yes global
 sudo apt install --assume-yes clang-format
 sudo apt install --assume-yes clang-tidy

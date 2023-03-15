@@ -61,9 +61,13 @@
 (customize-set-variable 'helm-ff-lynx-style-map t)
 (with-eval-after-load 'cc-mode
   (fset 'c-indent-region 'clang-format-region))
+;; helm-find-files tab open directory
+(define-key helm-find-files-map (kbd "C-i") 'helm-ff-TAB)
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  )
+(setq tags-table-list
+      '("/home/uraina/code"))
