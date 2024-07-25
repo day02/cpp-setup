@@ -42,3 +42,6 @@ git config --global user.email "udayrainaz@gmail.com"
 git config --global core.editor "vim"
 git config --global diff.tool "vimdiff"
 git config --global difftool.prompt "no"
+
+## nvidia install CUDA
+## https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html

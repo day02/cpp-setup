@@ -35,11 +35,8 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
-   (quote
-    (flycheck-clang-tidy flycheck magit-annex magit ztree clang-format yasnippet-snippets zygospore helm-gtags helm yasnippet ws-butler volatile-highlights use-package undo-tree iedit dtrt-indent counsel-projectile company clean-aindent-mode anzu)))
- '(safe-local-variable-values
-   (quote
-    ((company-clang-arguments "-I/usr/include/c++/11/")))))
+   '(flycheck-clang-tidy flycheck magit-annex magit ztree clang-format yasnippet-snippets zygospore helm-gtags helm yasnippet ws-butler volatile-highlights use-package undo-tree iedit dtrt-indent counsel-projectile company clean-aindent-mode anzu))
+ '(safe-local-variable-values '((company-clang-arguments "-I/usr/include/c++/11/"))))
 
 (global-set-key (kbd "<C-up>") 'shrink-window)
 (global-set-key (kbd "<C-down>") 'enlarge-window)

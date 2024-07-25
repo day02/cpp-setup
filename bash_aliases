@@ -17,19 +17,24 @@ export OS_TYPE="linux"
 
 function osq-mksys()
 {
-    rm -rf cd $CODE_DIR/osquery/build/*
-    docker stop osquery.$OS_TYPE
-    docker rm osquery.$OS_TYPE
-    docker rmi osquery.$OS_TYPE
+    #rm -rf cd $CODE_DIR/osquery/build/*
+    #rm -rf cd $CODE_DIR/.deps/*
+    docker stop osquery.$OS_TYPE osquery.$OS_TYPE.template
+    docker rm osquery.$OS_TYPE osquery.$OS_TYPE.template
+    docker rmi osquery.$OS_TYPE osquery.$OS_TYPE.template
     docker images -a
     docker ps -a
     docker build $CODE_DIR -f $CODE_DIR/Dockerfile.$OS_TYPE \
-           -t osquery.$OS_TYPE --build-arg user=uraina
-    docker run --detach \
-           -v $CODE_DIR/osquery/osquery:$CODE_DIR/osquery/osquery \
-           -v $CODE_DIR/osquery/specs:$CODE_DIR/osquery/specs \
-           -v $CODE_DIR/osquery/build:$CODE_DIR/osquery/build \
-           --name osquery.$OS_TYPE  -it osquery.$OS_TYPE bash
+           -t osquery.$OS_TYPE.template --build-arg user=uraina
+    docker run -v $CODE_DIR/osquery:$CODE_DIR/osquery:rw \
+               -v $CODE_DIR/.deps:/usr/local/osquery:rw \
+               --name osquery.$OS_TYPE.template \
+               -it osquery.$OS_TYPE.template \
+               mk-sys
+    docker commit osquery.$OS_TYPE.template osquery.$OS_TYPE
+    docker stop osquery.$OS_TYPE.template
+    docker rm osquery.$OS_TYPE.template
+    osq-new-container
 }
 
 function osq-new-container()
@@ -38,10 +43,11 @@ function osq-new-container()
     docker rm osquery.$OS_TYPE
     docker ps -a
     docker run --detach \
-           -v $CODE_DIR/osquery/osquery:$CODE_DIR/osquery/osquery \
-           -v $CODE_DIR/osquery/specs:$CODE_DIR/osquery/specs \
-           -v $CODE_DIR/osquery/build:$CODE_DIR/osquery/build \
-           --name osquery.$OS_TYPE  -it osquery.$OS_TYPE bash
+           -v $CODE_DIR/osquery:$CODE_DIR/osquery:rw \
+           -v $CODE_DIR/.deps:/usr/local/osquery:rw \
+           --name osquery.$OS_TYPE \
+           -it osquery.$OS_TYPE \
+           bash
 }
 
 function osq-container()
@@ -65,9 +71,29 @@ function osq-mkt()
     docker exec -it osquery.$OS_TYPE mkt
 }
 
+function osq-mkr()
+{
+    docker exec -it osquery.$OS_TYPE mkr
+}
+
+function osq-mkrt()
+{
+    docker exec -it osquery.$OS_TYPE mkrt
+}
+
+function osq-mk-rem()
+{
+    docker exec -it osquery.$OS_TYPE mk-rem
+}
+
 function osq-mk-tidy()
 {
     docker exec -it osquery.$OS_TYPE mk-tidy
+}
+
+function osq-mk-valgrind()
+{
+    docker exec -it osquery.$OS_TYPE mk-valgrind
 }
 
 function json-pretty()
@@ -80,12 +106,23 @@ function ssm()
     ssh -p 3022 uraina@127.0.0.1
 }
 
-function ssm-lxd()
+function ssm-dev()
 {
-    ssh -p 3023 uraina@127.0.0.1
+    #ssh uraina@uraina-dev2.local 'while true; do echo -n .; sleep 0.1; done' > /dev/null
+    ssh uraina@uraina-dev2.local
 }
 
-function ssm-crio()
+function ssm-win()
 {
-    ssh -p 3024 uraina@127.0.0.1
+    ssh -p 3025 uraina@127.0.0.1
+}
+
+function ssm-colo()
+{
+    ssh -A -o proxyJump=uraina@192.168.151.24 ubuntu@$1
+}
+
+function scp-colo()
+{
+    scp -A -o proxyJump=uraina@192.168.151.24 $1 ubuntu@$2
 }
