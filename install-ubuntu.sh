@@ -6,7 +6,6 @@ sudo apt upgrade --assume-yes
 
 sudo apt install --assume-yes build-essential
 sudo apt install --assume-yes python3-distutils
-sudo apt install --assume-yes build-essential
 sudo apt install --assume-yes python3-pip
 sudo apt install --assume-yes git
 sudo apt install --assume-yes vim
