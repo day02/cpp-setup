@@ -31,16 +31,12 @@ sudo apt autoremove --assume-yes -f
 sudo apt purge --assume-yes
 sudo apt clean --assume-yes
 
-##Virtual Box
-sudo dpkg-reconfigure virtualbox-dkms
-sudo apt install --assume-yes virtualbox
-
-git config --global push.default "tracking"
-git config --global user.name "uday raina"
-git config --global user.email "udayrainaz@gmail.com"
-git config --global core.editor "vim"
-git config --global diff.tool "vimdiff"
-git config --global difftool.prompt "no"
+## git config --global push.default "tracking"
+## git config --global user.name "uday raina"
+## git config --global user.email "udayrainaz@gmail.com"
+## git config --global core.editor "vim"
+## git config --global diff.tool "vimdiff"
+## git config --global difftool.prompt "no"
 
 ## nvidia install CUDA
 ## https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html
