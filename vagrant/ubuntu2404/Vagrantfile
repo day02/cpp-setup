@@ -1,18 +1,22 @@
-## mkdir -p ~/code/vagrant/ubuntu2204 && cd ~/code/vagrant/ubuntu2204
-## vagrant box add generic/ubuntu2204 --provider libvirt
-## mkdir -p ~/code/vagrant/ubuntu2204 && cd ~/code/vagrant/ubuntu2204
-## vagrant box add generic/ubuntu2204 --provider libvirt
+## rm -rf ~/code/osquery/build/debug_linux/osquery/.vagrant && cd ~/code/osquery/build/debug_linux/osquery
+## vagrant box add bento/ubuntu-24.04 --provider virtualbox
 ## vagrant up
+## vagrant ssh
+disk = '/home/uraina/code/vagrant/ubuntu2404SecondDisk.vdi'
 
 Vagrant.configure("2") do |config|
-  config.vm.box = "generic/ubuntu2204"
-  config.vm.hostname = "ubuntu2204"
-  config.vm.synced_folder ".", "/home/vagrant/mnt"
+  config.vm.box = "bento/ubuntu-24.04"
+  config.vm.hostname = "ubuntu2404"
+  config.vm.synced_folder "/home/uraina/code/osquery/build/debug_linux/osquery", "/home/vagrant/mnt", type: "virtualbox"
 
-  config.vm.provider :libvirt do |vm|
+  config.vm.provider :virtualbox do |vm|
+    vm.name = "ubuntu2404"
     vm.memory = 4096
     vm.cpus = 2
-    vm.storage :file, :size => '20G', :path => 'ubuntu2204SecondDisk.img', :allow_existing => true, :shareable => true, :type => 'raw'
+    unless File.exist?(disk)
+        vm.customize ['createhd', '--filename', disk, '--variant', 'Fixed', '--size', 20 * 1024]
+    end
+    vm.customize ['storageattach', :id,  '--storagectl', 'SATA Controller', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', disk]
   end
 
   config.vm.provision "shell", inline: <<-SHELL
