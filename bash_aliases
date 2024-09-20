@@ -12,6 +12,7 @@ export CODE_DIR="/home/uraina/code"
 alias code="cd $CODE_DIR"
 alias osq="cd $CODE_DIR/osquery"
 alias build="cd $CODE_DIR/osquery/build/debug_linux/osquery"
+alias vm="cd $CODE_DIR/vagrant"
 
 export OS_TYPE="linux"
 
@@ -99,11 +100,6 @@ function osq-mk-valgrind()
 function json-pretty()
 {
     python3 -m json.tool $1
-}
-
-function ssm()
-{
-    ssh -p 3022 uraina@127.0.0.1
 }
 
 function ssm-dev()

@@ -1,0 +1,56 @@
+## rm -rf ~/code/osquery/build/debug_linux/osquery/.vagrant && cd ~/code/osquery/build/debug_linux/osquery
+## vagrant box add bento/ubuntu-24.04 --provider virtualbox
+## vagrant up
+## vagrant ssh
+disk = '/home/uraina/code/vagrant/ubuntu2404SecondDisk.vdi'
+Vagrant.configure("2") do |config|
+  config.vm.box = "bento/ubuntu-24.04"
+  config.vm.hostname = "ubuntu2404"
+  config.vm.synced_folder "/home/uraina/code/osquery/build/debug_linux/osquery", "/home/vagrant/mnt", type: "virtualbox"
+
+  config.vm.provider :virtualbox do |vm|
+    vm.name = "ubuntu2404"
+    vm.memory = 4096
+    vm.cpus = 2
+    unless File.exist?(disk)
+        vm.customize ['createhd', '--filename', disk, '--variant', 'Fixed', '--size', 20 * 1024]
+    end
+    vm.customize ['storageattach', :id,  '--storagectl', 'SATA Controller', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', disk]
+  end
+
+  config.vm.provision "shell", inline: <<-SHELL
+    apt-get update
+    apt install -y build-essential \
+        git \
+        vim \
+        valgrind \
+        gcc \
+        g++ \
+        gdb \
+        tree \
+        htop \
+        docker.io
+    apt autoremove -yf
+    apt purge -y
+    apt clean -y
+
+    groupadd docker
+    usermod -aG docker vagrant
+    newgrp docker
+    docker pull ubuntu:16.04
+    ## docker run --rm -it --entrypoint bash ubuntu:16.04&
+
+    ctr images pull docker.io/library/python:3
+    ## ctr run --detach -t docker.io/library/python:3 python
+
+    (echo n; echo p; echo 1; echo 2048; echo 41943039; echo w) | sudo fdisk /dev/sdb
+    mkfs.ext4 /dev/sdb1
+    ## mount /dev/sdb1 /tmp
+    ## cp -rf /var/lib/docker/overlay2/d68fc0300107d7955528fe622d7dbe7414fea1822b0cf7ed00bc52c703dbdb4c/diff/. /tmp
+    ## cp -rf /var/lib/docker /tmp/var/lib/
+    ## cp -rf /var/lib/containerd /tmp/var/lib/
+    ## umount /tmp
+
+    dpkg -i /home/vagrant/mnt/assets-osquery-5.13.1.6-Uptycs.deb
+  SHELL
+end

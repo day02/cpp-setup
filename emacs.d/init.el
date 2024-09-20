@@ -34,8 +34,9 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(ecb-options-version "2.50")
  '(package-selected-packages
-   '(flycheck-clang-tidy flycheck magit-annex magit ztree clang-format yasnippet-snippets zygospore helm-gtags helm yasnippet ws-butler volatile-highlights use-package undo-tree iedit dtrt-indent counsel-projectile company clean-aindent-mode anzu))
+   '(flycheck-clang-tidy flycheck magit-annex magit ztree clang-format yasnippet-snippets zygospore helm-gtags helm yasnippet ws-butler volatile-highlights use-package undo-tree iedit dtrt-indent counsel-projectile company clean-aindent-mode anzu ecb ecb-autoloads))
  '(safe-local-variable-values '((company-clang-arguments "-I/usr/include/c++/11/"))))
 
 (global-set-key (kbd "<C-up>") 'shrink-window)
@@ -47,6 +48,9 @@
 (global-set-key (kbd "<f8>") 'grep)
 (global-set-key (kbd "<f9>") 'gud-gdb)
 (global-set-key (kbd "C-x C-f") 'helm-find-files)
+(global-set-key (kbd "C-x M-'") 'tmtxt/ecb-deactivate)
+(global-set-key (kbd "C-;") 'tmtxt/ecb-show-ecb-windows)
+(global-set-key (kbd "C-'") 'tmtxt/ecb-hide-ecb-windows)
 
 ;; Stop creating ~ files
 (setq make-backup-files nil)

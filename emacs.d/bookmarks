@@ -2,7 +2,12 @@
 ;;; This format is meant to be slightly human-readable;
 ;;; nevertheless, you probably don't want to edit it.
 ;;; -*- End Of Bookmark File Format Version Stamp -*-
-(("ssm-dev"
+(("vagrant"
+ (filename . "~/code/vagrant/")
+ (front-context-string . "ubuntu2404Second")
+ (rear-context-string . "32 Sep 23 18:25 ")
+ (position . 252))
+("ssm-dev"
  (filename . "/ssh:uraina@uraina-dev2.local:/Users/uraina/code/osquery/")
  (front-context-string . ".clang-format\n  ")
  (rear-context-string . "52 Jul 13 12:32 ")
