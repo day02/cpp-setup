@@ -1,9 +1,8 @@
 ## prepare the system for osquery build.
 FROM ubuntu:18.04
 RUN apt update && \
-    apt install -y sudo make cmake git python python3-pip python3-dev vim valgrind ruby && \
+    apt install -y sudo make cmake git python3-dev vim valgrind ruby && \
     ln -s /usr/bin/python3 /usr/local/bin/python && \
-    pip3 --no-cache-dir install --upgrade pip && \
     rm -rf /var/lib/apt/lists/*
 
 ## shortcut commands mk.
@@ -24,7 +23,7 @@ RUN echo '#!/bin/bash \n \
 ## shortcut commands mkr.
 RUN echo '#!/bin/bash \n \
     cd ~/code/osquery && \
-    REMEDIATION=1 make debug -j16 && \
+    make -j16 && \
     cd -' > /usr/bin/mkr && \
     chmod +x /usr/bin/mkr
 
@@ -42,8 +41,6 @@ RUN echo '#!/bin/bash \n \
     make debug -j16 && \
     cd -' > /usr/bin/mk-valgrind && \
     chmod +x /usr/bin/mk-valgrind
-
-RUN gem install dotenv -v 2.8.1
 
 ## add a user with sudo privilege.
 ARG user

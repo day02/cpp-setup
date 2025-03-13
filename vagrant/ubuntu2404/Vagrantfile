@@ -5,7 +5,7 @@
 disk = '/home/uraina/code/vagrant/ubuntu2404SecondDisk.vdi'
 Vagrant.configure("2") do |config|
   config.vm.box = "bento/ubuntu-24.04"
-  config.vm.hostname = "ubuntu2404"
+  config.vm.hostname = "urainaUbuntu2404"
   config.vm.synced_folder "/home/uraina/code/osquery/build/debug_linux/osquery", "/home/vagrant/mnt", type: "virtualbox"
 
   config.vm.provider :virtualbox do |vm|
@@ -29,10 +29,13 @@ Vagrant.configure("2") do |config|
         gdb \
         tree \
         htop \
-        docker.io
+        docker.io \
+        skopeo
     apt autoremove -yf
     apt purge -y
     apt clean -y
+
+    ## sudo passwd
 
     groupadd docker
     usermod -aG docker vagrant
