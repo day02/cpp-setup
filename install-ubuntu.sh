@@ -33,6 +33,9 @@ sudo apt install -y vagrant \
      libvirt-clients libvirt-daemon-system \
      bridge-utils
 
+## Tenstorrent
+sudo apt install -y wget dkms cargo
+
 sudo apt autoremove -yf
 sudo apt purge -y
 sudo apt clean -y
