@@ -1,0 +1,138 @@
+{
+  "model_id": "id_tt-transformers_Llama-3.1-8B-Instruct_p150",
+  "impl": {
+    "impl_id": "tt_transformers",
+    "impl_name": "tt-transformers",
+    "repo_url": "https://github.com/tenstorrent/tt-metal",
+    "code_path": "models/tt_transformers"
+  },
+  "hf_model_repo": "meta-llama/Llama-3.1-8B-Instruct",
+  "model_name": "Llama-3.1-8B-Instruct",
+  "device_type": "P150",
+  "tt_metal_commit": "55fd115",
+  "device_model_spec": {
+    "device": "P150",
+    "max_concurrency": 32,
+    "max_context": 65536,
+    "perf_targets_map": {},
+    "default_impl": true,
+    "perf_reference": [
+      {
+        "isl": 128,
+        "osl": 128,
+        "max_concurrency": 1,
+        "num_prompts": 8,
+        "image_height": null,
+        "image_width": null,
+        "images_per_prompt": null,
+        "task_type": "text",
+        "theoretical_ttft_ms": null,
+        "theoretical_tput_user": null,
+        "targets": {
+          "functional": {
+            "ttft_ms": 300.0,
+            "tput_user": 3.7,
+            "tput": null,
+            "tolerance": 0.0
+          },
+          "complete": {
+            "ttft_ms": 60.0,
+            "tput_user": 18.5,
+            "tput": null,
+            "tolerance": 0.0
+          },
+          "target": {
+            "ttft_ms": 30.0,
+            "tput_user": 37.0,
+            "tput": null,
+            "tolerance": 0.0
+          }
+        },
+        "target_peak_perf": {
+          "customer_functional": 0.1,
+          "customer_complete": 0.5,
+          "customer_sellable": 0.8
+        },
+        "num_inference_steps": null
+      }
+    ],
+    "vllm_args": {
+      "model": "meta-llama/Llama-3.1-8B-Instruct",
+      "block_size": "64",
+      "max_model_len": "65536",
+      "max_num_seqs": "32",
+      "max_num_batched_tokens": "65536",
+      "num_scheduler_steps": "10",
+      "max-log-len": "32",
+      "seed": "9472",
+      "override_tt_config": "{\"trace_region_size\": 50000000, \"enable_fast_runtime_mode\": false, \"enable_logging\": true, \"report_name\": \"vllm\", \"enable_graph_report\": false, \"enable_detailed_buffer_report\": true, \"enable_detailed_tensor_report\": false, \"enable_comparison_mode\": false}",
+      "port": "8000"
+    },
+    "override_tt_config": {
+      "trace_region_size": 50000000,
+      "enable_fast_runtime_mode": false,
+      "enable_logging": true,
+      "report_name": "vllm",
+      "enable_graph_report": false,
+      "enable_detailed_buffer_report": true,
+      "enable_detailed_tensor_report": false,
+      "enable_comparison_mode": false
+    },
+    "env_vars": {
+      "MESH_DEVICE": "P150",
+      "ARCH_NAME": "blackhole"
+    }
+  },
+  "system_requirements": null,
+  "env_vars": {
+    "VLLM_CONFIGURE_LOGGING": "1",
+    "VLLM_RPC_TIMEOUT": "900000",
+    "VLLM_TARGET_DEVICE": "tt",
+    "MESH_DEVICE": "P150",
+    "ARCH_NAME": "blackhole"
+  },
+  "vllm_commit": "aa4ae1e",
+  "custom_inference_server": null,
+  "param_count": 8,
+  "min_disk_gb": 36,
+  "min_ram_gb": 32,
+  "model_type": "LLM",
+  "repacked": 0,
+  "version": "0.4.0",
+  "docker_image": "ghcr.io/tenstorrent/tt-inference-server/vllm-tt-metal-src-release-ubuntu-22.04-amd64:0.4.0-e95ffa5-48eba14",
+  "status": "EXPERIMENTAL",
+  "code_link": "https://github.com/tenstorrent/tt-metal/tree/55fd115/models/tt_transformers",
+  "override_tt_config": {},
+  "supported_modalities": [
+    "text"
+  ],
+  "subdevice_type": null,
+  "uses_tensor_model_cache": true,
+  "cli_args": {
+    "model": "Llama-3.1-8B-Instruct",
+    "workflow": "server",
+    "device": "p150",
+    "impl": "tt-transformers",
+    "local_server": false,
+    "docker_server": true,
+    "interactive": false,
+    "workflow_args": null,
+    "service_port": "8000",
+    "disable_trace_capture": false,
+    "dev_mode": false,
+    "override_docker_image": "ghcr.io/tenstorrent/tt-inference-server/vllm-tt-metal-src-release-ubuntu-22.04-amd64:0.4.0-e95ffa5-48eba14",
+    "device_id": null,
+    "override_tt_config": "{\n    \"trace_region_size\": 50000000,\n    \"enable_fast_runtime_mode\": false,\n    \"enable_logging\": true,\n    \"report_name\": \"vllm\",\n    \"enable_graph_report\": false,\n    \"enable_detailed_buffer_report\": true,\n    \"enable_detailed_tensor_report\": false,\n    \"enable_comparison_mode\": false}",
+    "vllm_override_args": null,
+    "reset_venvs": false,
+    "model_spec_json": null,
+    "tt_metal_python_venv_dir": null,
+    "limit_samples_mode": null,
+    "skip_system_sw_validation": false,
+    "ci_mode": false,
+    "streaming": null,
+    "preprocessing": null,
+    "sdxl_num_prompts": "100"
+  },
+  "display_name": null
+}

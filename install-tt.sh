@@ -56,8 +56,8 @@ git submodule update --init --recursive
 ./install_dependencies.sh
 ./build_metal.sh -b RelWithDebInfo --build-all
 
-export TT_METAL_HOME=~/code/tt-metal 
-export PYTHON_ENV_DIR=~/.tenstorrent-venv 
+export TT_METAL_HOME=~/code/tt-metal
+export PYTHON_ENV_DIR=~/.tenstorrent-venv
 export PYTHONPATH=$(TT_METAL_HOME)
 
 $TT_METAL_HOME/create_venv.sh
@@ -116,3 +116,58 @@ curl -sS "http://localhost:8000/v1/completions" \
     \"max_tokens\": 50,
     \"temperature\": 0
   }" | jq
+
+docker run --rm \
+  --name vllm-llama31-8b-p150 \
+  --env-file /home/uraina/code/vllm-llama31-8b-p150/.env \
+  --cap-add ALL \
+  --device /dev/tenstorrent:/dev/tenstorrent \
+  --mount type=bind,src=/dev/hugepages-1G,dst=/dev/hugepages-1G \
+  --mount type=bind,src=/home/uraina/code/vllm-llama31-8b-p150/persistent_volume/volume_id_tt_transformers-Llama-3.1-8B-Instruct-v0.4.0,dst=/home/container_app_user/cache_root \
+  --mount type=bind,src=/home/uraina/.cache/huggingface/hub/models--meta-llama--Llama-3.1-8B-Instruct,dst=/home/container_app_user/readonly_weights_mount/Llama-3.1-8B-Instruct,readonly \
+  --mount type=bind,src=/home/uraina/code/vllm-llama31-8b-p150/run_specs/tt_model_spec.json,dst=/home/container_app_user/model_spec/tt_model_spec.json,readonly \
+  --shm-size 32G \
+  --publish 8000:8000 \
+  -e CACHE_ROOT=/home/container_app_user/cache_root \
+  -e TT_CACHE_PATH=/home/container_app_user/cache_root/tt_metal_cache/cache_Llama-3.1-8B-Instruct/P150 \
+  -e MODEL_WEIGHTS_PATH=/home/container_app_user/readonly_weights_mount/Llama-3.1-8B-Instruct/snapshots/0e9e39f249a16976918f6564b8830bc894c89659/original \
+  -e TT_LLAMA_TEXT_VER=tt_transformers \
+  -e TT_MODEL_SPEC_JSON_PATH=/home/container_app_user/model_spec/tt_model_spec.json \
+  ghcr.io/tenstorrent/tt-inference-server/vllm-tt-metal-src-release-ubuntu-22.04-amd64:0.4.0-e95ffa5-48eba14
+
+check_server_health() {
+    local URL="http://10.200.50.43:8000/health"
+    local code
+
+    code=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
+    if [[ $? -ne 0 ]]; then
+        echo "__ Error: Unable to connect to server at 10.200.50.43:8000"
+        return 1
+    fi
+
+    if [[ "$code" -eq 200 ]]; then
+        echo "__ Server is ready (HTTP 200)"
+    else
+        echo "__ Server responded with status: $code"
+    fi
+}
+
+## vllm production stack
+git clone https://github.com/vllm-project/production-stack.git
+cd production-stack
+git checkout vllm-stack-0.1.8
+
+cd production-stack/utils
+bash install-kubectl.sh
+bash install-helm.sh
+bash install-minikube-cluster.sh
+
+helm repo add vllm https://vllm-project.github.io/production-stack
+helm repo update
+helm install vllm vllm/vllm-stack -f ../vllm-llama31-8b-p150/values-tenstorrent.yaml
+
+kubectl get pods
+kubectl describe pod vllm-deployment-router-
+kubectl delete pod vllm-deployment-router-
+
+export PATH=/home/uraina/.local/bin/:$PATH

@@ -1,0 +1,104 @@
+servingEngineSpec:
+  enableEngine: true
+  runtimeClassName: ""   # or a custom RuntimeClass if you use one
+  # Optional: if you taint the Tenstorrent node
+  # tolerations:
+  #   - key: "tenstorrent"
+  #     operator: "Exists"
+  #     effect: "NoSchedule"
+
+  modelSpec:
+    - name: "llama31-8b-tt-p150"
+      # Use the Tenstorrent vLLM image instead of vllm/vllm-openai
+      repository: "ghcr.io/tenstorrent/tt-inference-server/vllm-tt-metal-src-release-ubuntu-22.04-amd64"
+      tag: "0.4.0-e95ffa5-48eba14"
+
+      # “Model URL” is what production-stack’s router expects as the model name.
+      # You usually want it to match what you pass as "model" in OpenAI requests:
+      modelURL: "meta-llama/Llama-3.1-8B-Instruct"
+
+      replicaCount: 1
+
+      # No CUDA GPUs, but you still need CPU/memory for the pod.
+      requestCPU: 16
+      requestMemory: "64Gi"
+      requestGPU: 0
+
+      # Match your --shm-size 32G
+      shmSize: "32Gi"
+
+      # Environment variables from your docker run
+      env:
+        # if you had secrets in .env, move them to K8s Secret
+        # and add an envFrom: [...] or more env entries here.
+        - name: CACHE_ROOT
+          value: "/home/container_app_user/cache_root"
+        - name: TT_CACHE_PATH
+          value: "/home/container_app_user/cache_root/tt_metal_cache/cache_Llama-3.1-8B-Instruct/P150"
+        - name: MODEL_WEIGHTS_PATH
+          value: "/home/container_app_user/readonly_weights_mount/Llama-3.1-8B-Instruct/snapshots/0e9e39f249a16976918f6564b8830bc894c89659/original"
+        - name: TT_LLAMA_TEXT_VER
+          value: "tt_transformers"
+        - name: TT_MODEL_SPEC_JSON_PATH
+          value: "/home/container_app_user/model_spec/tt_model_spec.json"
+
+      # Volumes and mounts mirroring your bind mounts & /dev
+      extraVolumes:
+        - name: tenstorrent-dev
+          hostPath:
+            path: /dev/tenstorrent
+            type: Directory             # or FileOrCreate if appropriate
+
+        - name: hugepages-1g
+          hostPath:
+            path: /dev/hugepages-1G
+            type: DirectoryOrCreate
+
+        - name: tt-cache-root
+          hostPath:
+            path: /home/uraina/code/vllm-llama31-8b-p150/persistent_volume/volume_id_tt_transformers-Llama-3.1-8B-Instruct-v0.4.0
+            type: Directory
+
+        - name: tt-readonly-weights
+          hostPath:
+            path: /home/uraina/.cache/huggingface/hub/models--meta-llama--Llama-3.1-8B-Instruct
+            type: Directory
+
+        - name: tt-model-spec-json
+          hostPath:
+            path: /home/uraina/code/vllm-llama31-8b-p150/run_specs/tt_model_spec.json
+            type: File
+
+      extraVolumeMounts:
+        - name: tenstorrent-dev
+          mountPath: /dev/tenstorrent
+
+        - name: hugepages-1g
+          mountPath: /dev/hugepages-1G
+
+        - name: tt-cache-root
+          mountPath: /home/container_app_user/cache_root
+
+        - name: tt-readonly-weights
+          mountPath: /home/container_app_user/readonly_weights_mount/Llama-3.1-8B-Instruct
+          readOnly: true
+
+        - name: tt-model-spec-json
+          mountPath: /home/container_app_user/model_spec/tt_model_spec.json
+          readOnly: true
+
+      # You likely need elevated privileges (you used --cap-add ALL before).
+      # Whether this works depends on what the production-stack chart exposes.
+      # If supported by the chart version, something like this:
+      securityContext:
+        privileged: true
+        # Or granular capabilities if you know the minimal set:
+        # capabilities:
+        #   add: ["SYS_ADMIN", "IPC_LOCK", "NET_ADMIN"]
+
+routerSpec:
+  enableRouter: true
+  # Usually you can leave the defaults for repository/tag:
+  # repository: "lmcache/lmstack-router"
+  # tag: "latest"
+
