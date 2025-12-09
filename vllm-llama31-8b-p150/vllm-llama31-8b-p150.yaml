@@ -1,28 +1,27 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: vllm-llama31-8b-p150
   labels:
     app: vllm-llama31-8b-p150
 spec:
+  # Headless service name used for stable network IDs
+  serviceName: vllm-llama31-8b-p150-headless
   replicas: 2
   selector:
     matchLabels:
       app: vllm-llama31-8b-p150
+  podManagementPolicy: Parallel
   template:
     metadata:
       labels:
         app: vllm-llama31-8b-p150
     spec:
-      # If your Tenstorrent node has a specific label, pin the pod to it:
-      # nodeSelector:
-      #   tenstorrent.com/accelerator: "true"
       containers:
         - name: vllm-llama31-8b-p150
           image: ghcr.io/tenstorrent/tt-inference-server/vllm-tt-metal-src-release-ubuntu-22.04-amd64:0.4.0-e95ffa5-48eba14
           imagePullPolicy: IfNotPresent
 
-          # Equivalent of --env-file
           envFrom:
             - secretRef:
                 name: vllm-llama31-8b-p150-env
@@ -65,24 +64,19 @@ spec:
             capabilities:
               add: ["ALL"]
 
-          # If your Tenstorrent device plugin advertises a resource, request it here.
-          # Replace "tenstorrent.com/tt-device" with the actual resource name from `kubectl describe node`.
+          # Request 1 Tenstorrent device + CPU/Mem/Hugepages
           resources:
             limits:
               squat.ai/tenstorrent: 1
-              memory: "64Gi"
+              memory: "32Gi"
               cpu: "8"
-              hugepages-1Gi: "8Gi"
+              hugepages-1Gi: "4Gi"
 
       volumes:
         - name: hugepages-1g
           hostPath:
             path: /dev/hugepages-1G
             type: Directory
-        - name: cache-root
-          hostPath:
-            path: /home/uraina/code/vllm-llama31-8b-p150/persistent_volume/volume_id_tt_transformers-Llama-3.1-8B-Instruct-v0.4.0
-            type: DirectoryOrCreate
         - name: readonly-weights
           hostPath:
             path: /home/uraina/.cache/huggingface/hub/models--meta-llama--Llama-3.1-8B-Instruct
@@ -95,4 +89,14 @@ spec:
           emptyDir:
             medium: Memory
             sizeLimit: 32Gi
+  volumeClaimTemplates:
+    - metadata:
+        name: cache-root
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: local-path   # k3s default storage class
+        resources:
+          requests:
+            storage: 200Gi             # adjust based on how big you want the per-card cache
 

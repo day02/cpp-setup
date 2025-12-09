@@ -1,11 +1,11 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: vllm-llama31-8b-p150
+  name: vllm-llama31-8b-p150-headless
   labels:
     app: vllm-llama31-8b-p150
 spec:
-  type: NodePort
+  clusterIP: None
   selector:
     app: vllm-llama31-8b-p150
   ports:

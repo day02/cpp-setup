@@ -171,16 +171,34 @@ kubectl describe nodes | grep tenstorrent
 kubectl create secret generic vllm-llama31-8b-p150-env \
         --from-env-file=/home/uraina/code/vllm-llama31-8b-p150/.env
 
+kubectl apply -f vllm-llama31-8b-p150-headless-service.yaml
+kubectl apply -f vllm-llama31-8b-p150-headless-service.yaml
+kubectl apply -f vllm-llama31-8b-p150-service.yaml
+
 ## kubectl commands for managing
 kubectl apply -f /home/uraina/code/vllm-llama31-8b-p150/vllm-llama31-8b-p150.yaml
 kubectl get pods
+kubectl get svc
+kubectl get statefulset
+kubectl get pods -w
+
 kubectl describe pod <>
 kubectl logs -f <>
-kubectl rollout restart deployment vllm-llama31-8b-p150
-kubectl exec -it <> -- bash
-kubectl delete pod tenstorrent-test --ignore-not-found
-kubectl scale deployment vllm-llama31-8b-p150 --replicas=0
 
+kubectl describe pod vllm-llama31-8b-p150-0
+kubectl describe pod vllm-llama31-8b-p150-1
+
+kubectl logs -f vllm-llama31-8b-p150-0
+kubectl logs -f vllm-llama31-8b-p150-1
+
+kubectl delete pod --ignore-not-found vllm-llama31-8b-p150-0
+kubectl delete pod --ignore-not-found vllm-llama31-8b-p150-1
+
+kubectl exec -it vllm-llama31-8b-p150-0 -- bash
+kubectl exec -it vllm-llama31-8b-p150-1 -- bash
+
+kubectl get ds -n kube-system
+kubectl get pods -n kube-system
 
 ## vllm
 git clone git@github.com:tenstorrent/vllm.git
