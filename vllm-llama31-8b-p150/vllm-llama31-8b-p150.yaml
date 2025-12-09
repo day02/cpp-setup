@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vllm-llama31-8b-p150
+  labels:
+    app: vllm-llama31-8b-p150
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: vllm-llama31-8b-p150
+  template:
+    metadata:
+      labels:
+        app: vllm-llama31-8b-p150
+    spec:
+      # If your Tenstorrent node has a specific label, pin the pod to it:
+      # nodeSelector:
+      #   tenstorrent.com/accelerator: "true"
+      containers:
+        - name: vllm-llama31-8b-p150
+          image: ghcr.io/tenstorrent/tt-inference-server/vllm-tt-metal-src-release-ubuntu-22.04-amd64:0.4.0-e95ffa5-48eba14
+          imagePullPolicy: IfNotPresent
+
+          # Equivalent of --env-file
+          envFrom:
+            - secretRef:
+                name: vllm-llama31-8b-p150-env
+
+          # Explicit envs from your docker command
+          env:
+            - name: CACHE_ROOT
+              value: /home/container_app_user/cache_root
+            - name: TT_CACHE_PATH
+              value: /home/container_app_user/cache_root/tt_metal_cache/cache_Llama-3.1-8B-Instruct/P150
+            - name: MODEL_WEIGHTS_PATH
+              value: /home/container_app_user/readonly_weights_mount/Llama-3.1-8B-Instruct/snapshots/0e9e39f249a16976918f6564b8830bc894c89659/original
+            - name: TT_LLAMA_TEXT_VER
+              value: tt_transformers
+            - name: TT_MODEL_SPEC_JSON_PATH
+              value: /home/container_app_user/model_spec/tt_model_spec.json
+
+          ports:
+            - name: http
+              containerPort: 8000
+
+          # Equivalent of --shm-size 32G and all your mounts
+          volumeMounts:
+            - name: hugepages-1g
+              mountPath: /dev/hugepages-1G
+            - name: cache-root
+              mountPath: /home/container_app_user/cache_root
+            - name: readonly-weights
+              mountPath: /home/container_app_user/readonly_weights_mount/Llama-3.1-8B-Instruct
+              readOnly: true
+            - name: model-spec
+              mountPath: /home/container_app_user/model_spec/tt_model_spec.json
+              readOnly: true
+            - name: dshm
+              mountPath: /dev/shm
+
+          # Rough equivalent to --cap-add ALL
+          securityContext:
+            allowPrivilegeEscalation: true
+            capabilities:
+              add: ["ALL"]
+
+          # If your Tenstorrent device plugin advertises a resource, request it here.
+          # Replace "tenstorrent.com/tt-device" with the actual resource name from `kubectl describe node`.
+          resources:
+            limits:
+              squat.ai/tenstorrent: 1
+              memory: "64Gi"
+              cpu: "8"
+              hugepages-1Gi: "8Gi"
+
+      volumes:
+        - name: hugepages-1g
+          hostPath:
+            path: /dev/hugepages-1G
+            type: Directory
+        - name: cache-root
+          hostPath:
+            path: /home/uraina/code/vllm-llama31-8b-p150/persistent_volume/volume_id_tt_transformers-Llama-3.1-8B-Instruct-v0.4.0
+            type: DirectoryOrCreate
+        - name: readonly-weights
+          hostPath:
+            path: /home/uraina/.cache/huggingface/hub/models--meta-llama--Llama-3.1-8B-Instruct
+            type: Directory
+        - name: model-spec
+          hostPath:
+            path: /home/uraina/code/vllm-llama31-8b-p150/run_specs/tt_model_spec.json
+            type: File
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 32Gi
+

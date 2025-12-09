@@ -1,0 +1,59 @@
+source ~/.tenstorrent-venv/bin/activate
+
+##export TT_METAL_HOME=~/code/tt-metal
+##export PYTHON_ENV_DIR=~/.tenstorrent-venv
+##export PYTHONPATH=$TT_METAL_HOME
+
+export HF_TOKEN="hf_..."
+export JWT_SECRET="testing"
+##export DEVICE="p150"
+export MODEL="Llama-3.1-8B-Instruct"
+
+generate_vllm_api_key() {
+  export VLLM_API_KEY="$(
+    python3 - <<'EOF'
+import os
+import jwt
+
+payload = {
+    "team_id": "tenstorrent",
+    "token_id": "debug-test",
+}
+
+secret = os.environ["JWT_SECRET"]
+token = jwt.encode(payload, secret, algorithm="HS256")
+
+print(token)
+EOF
+  )"
+}
+generate_vllm_api_key
+
+check_server_health() {
+    local URL="http://localhost:32156/health"
+    local code
+
+    code=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
+    if [[ $? -ne 0 ]]; then
+        echo "__ Error: Unable to connect to server at " "$URL"
+        return 1
+    fi
+
+    if [[ "$code" -eq 200 ]]; then
+        echo "__ Server is ready (HTTP 200)"
+    else
+        echo "__ Server responded with status: $code"
+    fi
+}
+
+run_model() {
+  curl -sS http://localhost:32156/v1/completions \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer $VLLM_API_KEY" \
+    -d "{
+          \"model\": \"meta-llama/$MODEL\",
+          \"prompt\": \"San Francisco is a\",
+          \"max_tokens\": 50,
+          \"temperature\": 0
+        }" | jq
+}

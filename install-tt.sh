@@ -1,10 +1,12 @@
 #/bin/bash
 
-## Install Software Dependencies
-sudo apt update
-sudo apt upgrade -y
+sudo passwd
+df . -h
+du / -sh
+lspci -d 1e52:
 
-sudo apt update && sudo apt install -y wget git python3-pip dkms cargo
+## Install Software Dependencies
+sudo apt update && sudo apt install -y wget git python3-pip dkms cargo python3-venv vim
 
 python3 -m venv ~/.tenstorrent-venv
 echo "source ~/.tenstorrent-venv/bin/activate" >> ~/.bash_aliases
@@ -23,6 +25,7 @@ git checkout ttkmd-2.5.0-rc1
 sudo dkms add .
 sudo dkms install tenstorrent/2.5.0-rc1
 sudo modprobe tenstorrent
+lsmod | grep tenstorrent
 cd ..
 
 ## Device Firmware Update (TT-Flash / TT-Firmware)
@@ -53,7 +56,7 @@ git clone https://github.com/tenstorrent/tt-metal.git
 cd tt-metal
 git checkout v0.64.5-rc3
 git submodule update --init --recursive
-./install_dependencies.sh
+sudo ./install_dependencies.sh
 ./build_metal.sh -b RelWithDebInfo --build-all
 
 export TT_METAL_HOME=~/code/tt-metal
@@ -66,9 +69,15 @@ python3 -m ttnn.examples.usage.run_op_on_device
 ~/code/tt-metal/models/experimental/stable_diffusion_xl_base/tests$ PYTHONPATH=~/code/tt-metal/ pytest ./test_sdxl_inpaint_accuracy.py
 cd ..
 
-## tt-inference-server
+## Install model
+pip install -U huggingface_hub transformers
+huggingface-cli login
+huggingface-cli download meta-llama/Llama-3.1-8B-Instruct
+
+## Install tt-inference-server
 git clone https://github.com/tenstorrent/tt-inference-server.git
 cd tt-inference-server
+git checkout v0.4.0
 
 export HF_TOKEN="hf_..."
 export JWT_SECRET="testing"
@@ -91,23 +100,13 @@ python3 run.py \
     "enable_detailed_tensor_report": false,
     "enable_comparison_mode": false}'
 
-## vllm
-git clone git@github.com:tenstorrent/vllm.git
-cd vllm
-
-# Add the original vLLM repo as "upstream"
-git remote add upstream git@github.com:vllm-project/vllm.git
-
-# Fetch both remotes
-git fetch origin
-git fetch upstream
-git diff "$(git merge-base upstream/main origin/main)"..origin/main
-
-# JWT_SECRET
+## JWT_SECRET
 pip3 install --upgrade pip
 pip install pyjwt==2.7.0
 export VLLM_API_KEY=$(python3 -c 'import os; import json; import jwt; json_payload = json.loads("{\"team_id\": \"tenstorrent\", \"token_id\": \"debug-test\"}"); encoded_jwt = jwt.encode(json_payload, os.environ["JWT_SECRET"], algorithm="HS256"); print(encoded_jwt)')
-curl -sS "http://localhost:8000/v1/completions" \
+
+## verify vllm
+curl -sS "http://localhost:32156/v1/completions" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $VLLM_API_KEY" \
   -d "{
@@ -116,6 +115,13 @@ curl -sS "http://localhost:8000/v1/completions" \
     \"max_tokens\": 50,
     \"temperature\": 0
   }" | jq
+
+## vllm docker deployment
+mkdir -p vllm-llama31-8b-p150
+cp ~/code/tt-inference-server/.env ~/code/vllm-llama31-8b-p150/.env
+mv ~/code/tt-inference-server/persistent_volume ~/code/vllm-llama31-8b-p150/
+## save the latest .json spec as tt_model_spec.json
+mv ~/code/tt-inference-server/workflow_logs/run_specs ~/code/vllm-llama31-8b-p150/
 
 docker run --rm \
   --name vllm-llama31-8b-p150 \
@@ -151,6 +157,42 @@ check_server_health() {
         echo "__ Server responded with status: $code"
     fi
 }
+
+## Install k3s
+curl -sfL https://get.k3s.io | sh -
+sudo cat /var/lib/rancher/k3s/server/node-token
+sudo kubectl get nodes
+
+## Apply code/vllm-llama31-8b-p150
+kubectl apply -f ~/code/vllm-llama31-8b-p150/tenstorrent-device-plugin.yaml
+kubectl -n kube-system get pods -o wide | grep tenstorrent-device-plugin
+kubectl describe nodes | grep tenstorrent
+
+kubectl create secret generic vllm-llama31-8b-p150-env \
+        --from-env-file=/home/uraina/code/vllm-llama31-8b-p150/.env
+
+## kubectl commands for managing
+kubectl apply -f /home/uraina/code/vllm-llama31-8b-p150/vllm-llama31-8b-p150.yaml
+kubectl get pods
+kubectl describe pod <>
+kubectl logs -f <>
+kubectl rollout restart deployment vllm-llama31-8b-p150
+kubectl exec -it <> -- bash
+kubectl delete pod tenstorrent-test --ignore-not-found
+kubectl scale deployment vllm-llama31-8b-p150 --replicas=0
+
+
+## vllm
+git clone git@github.com:tenstorrent/vllm.git
+cd vllm
+
+# Add the original vLLM repo as "upstream"
+git remote add upstream git@github.com:vllm-project/vllm.git
+
+# Fetch both remotes
+git fetch origin
+git fetch upstream
+git diff "$(git merge-base upstream/main origin/main)"..origin/main
 
 ## vllm production stack
 git clone https://github.com/vllm-project/production-stack.git
