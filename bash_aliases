@@ -3,16 +3,21 @@
 [ -z "$TMUX"  ] && { tmux attach || exec tmux new-session && exit;}
 
 alias gl="git log --graph --decorate --abbrev-commit --all"
-alias rex="osq-container && killall emacs; emacs --daemon; x"
+alias rex="killall emacs; source ~/.venv/bin/activate; emacs --daemon; x"
 alias x="emacsclient -nw ."
 alias ..="cd .."
 export EDITOR="x"
 
 export CODE_DIR="/home/uraina/code"
 alias code="cd $CODE_DIR"
-alias osq="cd $CODE_DIR/osquery"
-alias build="cd $CODE_DIR/osquery/build/debug_linux/osquery"
-alias vm="cd $CODE_DIR/vagrant"
+
+ssl() {
+	ssh uraina@uraina-lab
+}
+
+scl() {
+	scp -r "$1" uraina@uraina-lab:"$2"
+}
 
 export OS_TYPE="linux"
 

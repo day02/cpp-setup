@@ -5,8 +5,11 @@ df . -h
 du / -sh
 lspci -d 1e52:
 
+## sudo vi /etc/hosts
+## add ip uraina-lab
+
 ## Install Software Dependencies
-sudo apt update && sudo apt install -y wget git python3-pip dkms cargo python3-venv vim
+sudo apt update && sudo apt install -y wget git python3-pip dkms cargo python3-venv vim clang
 
 python3 -m venv ~/.tenstorrent-venv
 echo "source ~/.tenstorrent-venv/bin/activate" >> ~/.bash_aliases
@@ -61,10 +64,10 @@ sudo ./install_dependencies.sh
 
 export TT_METAL_HOME=~/code/tt-metal
 export PYTHON_ENV_DIR=~/.tenstorrent-venv
-export PYTHONPATH=$(TT_METAL_HOME)
+export PYTHONPATH=$TT_METAL_HOME
 
 $TT_METAL_HOME/create_venv.sh
-source $(PYTHON_ENV_DIR)/bin/activate
+source $PYTHON_ENV_DIR/bin/activate
 python3 -m ttnn.examples.usage.run_op_on_device
 ~/code/tt-metal/models/experimental/stable_diffusion_xl_base/tests$ PYTHONPATH=~/code/tt-metal/ pytest ./test_sdxl_inpaint_accuracy.py
 cd ..
@@ -81,6 +84,7 @@ git checkout v0.4.0
 
 export HF_TOKEN="hf_..."
 export JWT_SECRET="testing"
+
 export DEVICE="p150"
 export MODEL="Llama-3.1-8B-Instruct"
 
@@ -89,7 +93,7 @@ python3 run.py \
   --device "$DEVICE" \
   --workflow server \
   --docker-server \
-  --override-docker-image ghcr.io/tenstorrent/tt-inference-server/vllm-tt-metal-src-release-ubuntu-22.04-amd64:0.4.0-e95ffa5-48eba14 \
+  --override-docker-image ghcr.io/tenstorrent/tt-inference-server/vllm-tt-metal-src-dev-ubuntu-22.04-amd64:0.5.0-fbbbd2d-7a9b86f \
   --override-tt-config '{
     "trace_region_size": 50000000,
     "enable_fast_runtime_mode": false,
@@ -99,6 +103,117 @@ python3 run.py \
     "enable_detailed_buffer_report": true,
     "enable_detailed_tensor_report": false,
     "enable_comparison_mode": false}'
+
+docker run --rm \
+  --name vllm-llama31-8b-p150 \
+  --env-file /home/uraina/code/vllm-llama31-8b-p150/.env \
+  --cap-add ALL \
+  --device /dev/tenstorrent:/dev/tenstorrent \
+  --mount type=bind,src=/dev/hugepages-1G,dst=/dev/hugepages-1G \
+  --mount type=bind,src=/home/uraina/code/vllm-llama31-8b-p150/persistent_volume/volume_id_tt_transformers-Llama-3.1-8B-Instruct-v0.4.0,dst=/home/container_app_user/cache_root \
+  --mount type=bind,src=/home/uraina/.cache/huggingface/hub/models--meta-llama--Llama-3.1-8B-Instruct,dst=/home/container_app_user/readonly_weights_mount/Llama-3.1-8B-Instruct,readonly \
+  --mount type=bind,src=/home/uraina/code/vllm-llama31-8b-p150/run_specs/tt_model_spec.json,dst=/home/container_app_user/model_spec/tt_model_spec.json,readonly \
+  --shm-size 32G \
+  --publish 8000:8000 \
+  -e CACHE_ROOT=/home/container_app_user/cache_root \
+  -e TT_CACHE_PATH=/home/container_app_user/cache_root/tt_metal_cache/cache_Llama-3.1-8B-Instruct/P150 \
+  -e MODEL_WEIGHTS_PATH=/home/container_app_user/readonly_weights_mount/Llama-3.1-8B-Instruct/snapshots/0e9e39f249a16976918f6564b8830bc894c89659/original \
+  -e TT_LLAMA_TEXT_VER=tt_transformers \
+  -e TT_MODEL_SPEC_JSON_PATH=/home/container_app_user/model_spec/tt_model_spec.json \
+  ghcr.io/tenstorrent/tt-inference-server/vllm-tt-metal-src-release-ubuntu-22.04-amd64:0.4.0-e95ffa5-48eba14
+
+curl -sS "http://localhost:32156/v1/completions" \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer $VLLM_API_KEY" \
+     -d "{
+    \"model\": \"meta-llama/$MODEL\",
+    \"prompt\": \"San Francisco is a\",
+    \"max_tokens\": 50,
+    \"temperature\": 0
+  }" | jq
+
+
+#####################
+
+export DEVICE="n300"
+export MODEL="Qwen2.5-VL-3B-Instruct"
+
+python3 run.py \
+        --model "$MODEL" \
+        --device "$DEVICE" \
+        --workflow server \
+        --docker-server \
+        --impl tt-transformers \
+        --override-docker-image ghcr.io/tenstorrent/tt-inference-server/vllm-tt-metal-src-dev-ubuntu-22.04-amd64:0.5.0-fbbbd2d-7a9b86f
+
+docker run --rm \
+  --name tt-inference-server-426e9f8f \
+  --env-file /home/uraina/code/tt-inference-server/.env \
+  --cap-add ALL \
+  --device /dev/tenstorrent:/dev/tenstorrent \
+  --shm-size 32G \
+  --publish 8000:8000 \
+  --mount type=bind,src=/dev/hugepages-1G,dst=/dev/hugepages-1G \
+  --mount type=bind,src=/home/uraina/code/tt-inference-server/persistent_volume/volume_id_tt_transformers-Qwen2.5-VL-3B-Instruct-v0.4.0,dst=/home/container_app_user/cache_root \
+  --mount type=bind,src=/home/uraina/code/tt-inference-server/workflow_logs/run_specs/tt_model_spec.json,dst=/home/container_app_user/model_spec/tt_model_spec.json,readonly \
+  --mount type=bind,src=/home/uraina/.cache/huggingface/hub/models--Qwen--Qwen2.5-VL-3B-Instruct,dst=/home/container_app_user/readonly_weights_mount/Qwen2.5-VL-3B-Instruct,readonly \
+  -e CACHE_ROOT=/home/container_app_user/cache_root \
+  -e TT_CACHE_PATH=/home/container_app_user/cache_root/tt_metal_cache/cache_Qwen2.5-VL-3B-Instruct/N300 \
+  -e MODEL_WEIGHTS_PATH=/home/container_app_user/readonly_weights_mount/Qwen2.5-VL-3B-Instruct/snapshots/66285546d2b821cf421d4f5eb2576359d3770cd3 \
+  -e TT_MODEL_SPEC_JSON_PATH=/home/container_app_user/model_spec/tt_model_spec.json \
+  ghcr.io/tenstorrent/tt-inference-server/vllm-tt-metal-src-dev-ubuntu-22.04-amd64:0.5.0-fbbbd2d-7a9b86f
+
+curl http://localhost:8000/v1/chat/completions \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer $VLLM_API_KEY" \
+     -d '{
+    \"model\": \"Qwen/$MODEL\",
+    \"messages\": [
+      {
+        \"role\": \"user\",
+        \"content\": [
+          { \"type\": \"text\", \"text\": \"What is shown in this image?\" },
+          {
+            \"type\": \"image_url\",
+            \"image_url\": {
+              \"url\": \"https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/PNG_transparency_demonstration_1.png/640px-PNG_transparency_demonstration_1.png\"
+            }
+          }
+        ]
+      }
+    ]
+  }'
+
+#####################
+
+## tt-media-server
+cd tt-inference-server/tt-media-server
+git checkout ff12066f4c906d043f992ab10e02e4080414064c ## dev
+sudo apt update && sudo apt install -y ffmpeg && pip install -r requirements.txt
+
+export MODEL_RUNNER=tt-sdxl-edit
+export MODEL=stable-diffusion-xl-1.0-inpainting-0.1
+export DEVICE=p150
+export API_KEY=testing
+export LOG_FILE=/tmp/tt.log
+uvicorn main:app --host 0.0.0.0 --port 8000 --workers 1 --lifespan on
+
+curl -s http://127.0.0.1:8000/openapi.json | jq '.paths | keys'
+curl -X 'POST' \
+     'http://127.0.0.1:8000/image/edits' \
+     -H 'accept: application/json' \
+     -H 'Authorization: Bearer testing' \
+     -H 'Content-Type: application/json' \
+     -d '{
+  "prompt": "Volcano on a beach",
+  "negative_prompt": "low quality",
+  "num_inference_steps": 20,
+  "seed": 0,
+  "guidance_scale": 7.0,
+  "number_of_images": 1
+}'
+
+ssh -L 8000:localhost:8000 uraina@uraina-lab
 
 ## JWT_SECRET
 pip3 install --upgrade pip
@@ -159,9 +274,56 @@ check_server_health() {
 }
 
 ## Install k3s
-curl -sfL https://get.k3s.io | sh -
+curl -sfL https://get.k3s.io | \
+    INSTALL_K3S_EXEC="server --write-kubeconfig-mode 644" \
+                    sh -
 sudo cat /var/lib/rancher/k3s/server/node-token
-sudo kubectl get nodes
+kubectl get nodes
+
+sudo /usr/local/bin/k3s-killall.sh
+sudo /usr/local/bin/k3s-uninstall.sh
+sudo rm -rf /etc/rancher/k3s
+sudo rm -rf /var/lib/rancher/k3s
+
+## helm
+cd /tmp
+curl -fsSL https://get.helm.sh/helm-v3.16.4-linux-amd64.tar.gz -o helm.tar.gz
+tar -xzf helm.tar.gz
+sudo mv /tmp/linux-amd64/helm /usr/bin/helm
+rm -rf /tmp/linux-amd64 /tmp/helm.tar.gz
+cd -
+
+helm version
+
+sudo mkdir -p /opt/foundry/models/Llama-3.1-8B-Instruct/original
+rsync -avL \
+      ~/.cache/huggingface/hub/models--meta-llama--Llama-3.1-8B-Instruct/snapshots/*/original/ \
+      /opt/foundry/models/Llama-3.1-8B-Instruct/original/
+sudo cp llama3.1-8b/tt_model_spec.json /opt/foundry/models/Llama-3.1-8B-Instruct/
+
+mkdir -p ~/.kube
+sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
+sudo chown "$USER":"$USER" ~/.kube/config
+chmod 600 ~/.kube/config
+export KUBECONFIG=~/.kube/config
+
+helm lint charts/foundry
+helm install foundry charts/foundry \
+     --namespace foundry \
+     --create-namespace
+helm upgrade --install foundry charts/foundry \
+     --namespace foundry
+
+helm uninstall foundry -n foundry
+
+kubectl get all -n foundry
+
+kubectl get pods -n kube-system | grep tt
+kubectl get pods -n foundry
+kubectl get svc -n foundry
+
+kubectl describe -n foundry pod foundry-llama-3-1-8b-0
+kubectl logs -n foundry -f foundry-llama-3-1-8b-0
 
 ## Apply code/vllm-llama31-8b-p150
 kubectl apply -f ~/code/vllm-llama31-8b-p150/tenstorrent-device-plugin.yaml
@@ -231,3 +393,42 @@ kubectl describe pod vllm-deployment-router-
 kubectl delete pod vllm-deployment-router-
 
 export PATH=/home/uraina/.local/bin/:$PATH
+
+## tt-forge
+git clone https://github.com/tenstorrent/tt-forge.git
+cd tt-forge
+git submodule update --init --recursive
+
+## tt-xla
+git clone https://github.com/tenstorrent/tt-xla.git
+cd tt-xla
+git submodule update --init --recursive
+
+## tt-xla
+docker run -it --rm \
+       --name tt-xla-dev \
+       --device /dev/tenstorrent \
+       -v /dev/hugepages-1G:/dev/hugepages-1G \
+       -v /home/uraina/code/tt-xla:/tt-xla \
+       -v ~/.cache/huggingface:/root/.cache/huggingface \
+       ghcr.io/tenstorrent/tt-xla-slim:latest
+
+##ghcr.io/tenstorrent/tt-xla/tt-xla-ci-ubuntu-22-04:dt-49ad6c9c33de1d844b39c2e0c5ed2e61a2b7e0a3dff8d58ad58b3dc976b471c5
+
+cd tt-xla
+source venv/activate
+pip install pjrt-plugin-tt --extra-index-url https://pypi.eng.aws.tenstorrent.com/
+pip install flax transformers
+
+pytest -svv "/tt-xla/tests/runner/test_models.py::test_all_models_torch[qwen_2_5_vl/pytorch-7b_instruct-single_device-full-inference]"
+
+pytest /tt-xla/tests/runner/test_models.py --collect-only -q | grep qwen_2_5_vl/pytorch-7b_instruct
+
+
+pip install -r /tt-forge/benchmark/tt-xla/requirements.txt
+pip install -U qwen-vl-utils==0.0.14
+pytest -svv /tt-forge/benchmark/tt-xla/llms.py::test_qwen_2_5_vl_7b
+
+export PYTHONPATH=/tt-forge:$PYTHONPATH
+pip install flax transformers
+python tt-forge/demos/tt-xla/nlp/pytorch/opt_demo.py
