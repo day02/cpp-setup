@@ -325,42 +325,8 @@ kubectl get svc -n foundry
 kubectl describe -n foundry pod foundry-llama-3-1-8b-0
 kubectl logs -n foundry -f foundry-llama-3-1-8b-0
 
-## Apply code/vllm-llama31-8b-p150
-kubectl apply -f ~/code/vllm-llama31-8b-p150/tenstorrent-device-plugin.yaml
-kubectl -n kube-system get pods -o wide | grep tenstorrent-device-plugin
-kubectl describe nodes | grep tenstorrent
-
-kubectl create secret generic vllm-llama31-8b-p150-env \
-        --from-env-file=/home/uraina/code/vllm-llama31-8b-p150/.env
-
-kubectl apply -f vllm-llama31-8b-p150-headless-service.yaml
-kubectl apply -f vllm-llama31-8b-p150-headless-service.yaml
-kubectl apply -f vllm-llama31-8b-p150-service.yaml
-
-## kubectl commands for managing
-kubectl apply -f /home/uraina/code/vllm-llama31-8b-p150/vllm-llama31-8b-p150.yaml
-kubectl get pods
-kubectl get svc
-kubectl get statefulset
-kubectl get pods -w
-
-kubectl describe pod <>
-kubectl logs -f <>
-
-kubectl describe pod vllm-llama31-8b-p150-0
-kubectl describe pod vllm-llama31-8b-p150-1
-
-kubectl logs -f vllm-llama31-8b-p150-0
-kubectl logs -f vllm-llama31-8b-p150-1
-
-kubectl delete pod --ignore-not-found vllm-llama31-8b-p150-0
-kubectl delete pod --ignore-not-found vllm-llama31-8b-p150-1
-
-kubectl exec -it vllm-llama31-8b-p150-0 -- bash
-kubectl exec -it vllm-llama31-8b-p150-1 -- bash
-
-kubectl get ds -n kube-system
-kubectl get pods -n kube-system
+kubectl describe -n foundry pod foundry-qwen2-5-vl-3b-instruct-0
+kubectl logs -n foundry -f foundry-qwen2-5-vl-3b-instruct-0
 
 ## vllm
 git clone git@github.com:tenstorrent/vllm.git
@@ -394,11 +360,6 @@ kubectl delete pod vllm-deployment-router-
 
 export PATH=/home/uraina/.local/bin/:$PATH
 
-## tt-forge
-git clone https://github.com/tenstorrent/tt-forge.git
-cd tt-forge
-git submodule update --init --recursive
-
 ## tt-xla
 git clone https://github.com/tenstorrent/tt-xla.git
 cd tt-xla
@@ -408,12 +369,38 @@ git submodule update --init --recursive
 docker run -it --rm \
        --name tt-xla-dev \
        --device /dev/tenstorrent \
+       --publish 8000:8000 \
        -v /dev/hugepages-1G:/dev/hugepages-1G \
        -v /home/uraina/code/tt-xla:/tt-xla \
        -v ~/.cache/huggingface:/root/.cache/huggingface \
-       ghcr.io/tenstorrent/tt-xla-slim:latest
+       ghcr.io/tenstorrent/tt-xla/tt-xla-slim:409c0ef74bfcb2c2bd8f848c200a0f67397231d6
 
-##ghcr.io/tenstorrent/tt-xla/tt-xla-ci-ubuntu-22-04:dt-49ad6c9c33de1d844b39c2e0c5ed2e61a2b7e0a3dff8d58ad58b3dc976b471c5
+apt-get update && apt-get install -y libnuma-dev
+
+cd /tt-xla
+source /tt_xla/venv/activate
+
+export CMAKE_DISABLE_FIND_PACKAGE_CUDA=ON
+export CMAKE_DISABLE_FIND_PACKAGE_HIP=ON
+export CUDA_HOME=""
+export ROCM_HOME=""
+python3 -m pip config set global.extra-index-url https://download.pytorch.org/whl/cpu
+python -m pip install -U pip setuptools wheel
+
+VLLM_TARGET_DEVICE=cpu python -m pip install -e ./integrations/vllm_plugin/
+
+VLLM_TARGET_DEVICE=tt TTXLA_LOGGER_LEVEL=DEBUG \
+  vllm serve TinyLlama/TinyLlama-1.1B-Chat-v1.0 \
+    --max-model-len 2048 \
+    --max-num-batched-tokens 2048 \
+    --max-num-seqs 1 \
+    --no-enable-prefix-caching \
+    --additional-config "{\"enable_const_eval\": \"False\", \"min_context_len\": 32}"
+
+## releases/v0.10.1
+##VLLM_TARGET_DEVICE=cpu python -m pip install -e "vllm @ git+https://github.com/vllm-project/vllm.git@1da94e673c257373280026f75ceb4effac80e892"
+
+## VLLM_TARGET_DEVICE=cpu python -m pip install -e "vllm @ git+https://github.com/vllm-project/vllm.git@4fd9d6a85c00ac0186aa9abbeff73fc2ac6c721e"
 
 cd tt-xla
 source venv/activate
@@ -423,7 +410,6 @@ pip install flax transformers
 pytest -svv "/tt-xla/tests/runner/test_models.py::test_all_models_torch[qwen_2_5_vl/pytorch-7b_instruct-single_device-full-inference]"
 
 pytest /tt-xla/tests/runner/test_models.py --collect-only -q | grep qwen_2_5_vl/pytorch-7b_instruct
-
 
 pip install -r /tt-forge/benchmark/tt-xla/requirements.txt
 pip install -U qwen-vl-utils==0.0.14
