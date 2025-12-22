@@ -10,6 +10,7 @@ export EDITOR="x"
 
 export CODE_DIR="/home/uraina/code"
 alias code="cd $CODE_DIR"
+source ~/.venv/bin/activate
 
 ssl() {
 	ssh uraina@uraina-lab
