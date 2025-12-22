@@ -13,8 +13,8 @@ sudo apt install -y \
   emacs elpa-vterm ripgrep fd-find libvterm-dev
 
 ## emacs settings
-python3 -m venv .venv
-source .venv/bin/activate
+python3 -m venv ~/.venv
+source ~/.venv/bin/activate
 python3 -m pip install --upgrade setuptools
 python3 -m pip install black isort aider-chat
 
