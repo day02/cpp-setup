@@ -329,6 +329,17 @@ kubectl logs -n foundry -f foundry-qwen2-5-vl-3b-instruct-0
 
 kubectl exec -it -n foundry foundry-llama-3-1-8b-0 -- /bin/bash
 
+kubectl get all -n turiyam
+kubectl rollout restart deployment turiyam-router -n turiyam
+
+kubectl -n kube-system get pods -o wide | grep foundry-tt-device-plugin
+kubectl get nodes --show-labels | grep foundry.tt/has-tt
+kubectl get node worker1 -o json | jq '.status.allocatable'
+
+kubectl cordon worker1
+kubectl uncordon worker1
+
+
 ## vllm
 git clone git@github.com:tenstorrent/vllm.git
 cd vllm
